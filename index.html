@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+    </head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var createScene = function () {
+        
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+        
+            var camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 4, 100, BABYLON.Vector3.Zero(), scene);
+        	camera.attachControl(canvas, true, false);
+
+            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+        
+            // Default intensity is 1. Let's dim the light a small amount
+            light.intensity = 1.0;
+
+            //左
+            var box1 = BABYLON.MeshBuilder.CreateBox("box1",{height:500, width: 50, depth: 50},scene);
+            box1.position = new BABYLON.Vector3(-230,0,-40);
+            box1.rotation.z = Math.PI/2;
+            box1.rotation.x = Math.PI/2;
+            box1.rotation.y = Math.PI/2;
+            
+            //右
+            var box2 = BABYLON.MeshBuilder.CreateBox("box2",{height: 500, width: 50, depth: 50},scene);
+            box2.position = new BABYLON.Vector3(230,0,-40);
+            box2.rotation.z = Math.PI/2;
+            box2.rotation.x = Math.PI/2;
+            box2.rotation.y = Math.PI/2;
+            
+            //真ん中
+            var box3 = BABYLON.MeshBuilder.CreateBox("box3",{height: 50, width: 510, depth: 50},scene);
+            box3.position = new BABYLON.Vector3(0,0,210);
+            box3.rotation.z = Math.PI/2;
+            box3.rotation.x = Math.PI/2;
+            box3.rotation.y = Math.PI/2;
+
+            //マテリアルの宣言
+            var myBrickImageMaterial = new BABYLON.StandardMaterial("brick", scene);
+
+            //マテリアルの中にあるテクスチャプロパティに、テクスチャを設定
+            myBrickImageMaterial.ambientTexture = new BABYLON.Texture("textures/brickwall_base.jpg", scene);
+
+            //オブジェクトのマテリアルプロパティと、先ほど宣言したマテリアルを対応づけ
+            box1.material = myBrickImageMaterial;
+            box2.material = myBrickImageMaterial;
+            box3.material = myBrickImageMaterial;
+
+            //光の球
+            var sphere1 =BABYLON.MeshBuilder.CreateSphere("sphere1",{diameter:50},scene);
+            sphere1.position = new BABYLON.Vector3(-100,-50,0);
+
+            var sphere2 =BABYLON.MeshBuilder.CreateSphere("sphere2",{diameter:50},scene);
+            sphere2.position = new BABYLON.Vector3(100,-50,80);
+
+            var sphere3 =BABYLON.MeshBuilder.CreateSphere("sphere3",{diameter:40},scene);
+            sphere3.position = new BABYLON.Vector3(40,-50,-100);
+
+             var sphere4 =BABYLON.MeshBuilder.CreateSphere("sphere4",{diameter:40},scene);
+            sphere4.position = new BABYLON.Vector3(-120,-50,-100);
+
+            var gl = new BABYLON.GlowLayer("glow", scene,{
+           //     mainTextureFixedSize: 1024,
+           //     blurKernelSize: 64
+            });
+            gl.intensity = 100;
+            gl.customEmissiveColorSelector = function(mesh, subMesh, material, result) {
+                if (mesh.name === "sphere1") {
+                    result.set(0.01, 0, 0.01, 0.2);
+                } else if(mesh.name === "sphere2"){
+                    result.set(0, 1, 0.1, 0.2);
+                } else if(mesh.name === "sphere3"){
+                    result.set(0.01, 0.01, 0, 0.8);
+                } else if(mesh.name === "sphere4"){
+                    result.set(0, 0.05, 1, 0.1);
+                } else{
+                    result.set(0,0,0,0);
+                }
+            }
+
+            //プールの中の球の自発光を強調
+            var pointlight1 = new BABYLON.PointLight("pointLight1", new BABYLON.Vector3(-140,-20,-40), scene);
+            pointlight1.specular = new BABYLON.Color3(0.01,0,0.01);
+            pointlight1.intensity = 800;
+            pointlight1.radius = 100;
+
+            var pointlight2 = new BABYLON.PointLight("pointLight2", new BABYLON.Vector3(100,-100,-40), scene);
+            pointlight2.specular = new BABYLON.Color3(0,1,0.1);
+            pointlight2.intensity = 100;
+            pointlight2.radius = 50;
+
+            var pointlight3 = new BABYLON.PointLight("pointLight3", new BABYLON.Vector3(40,-10,-40), scene);
+            pointlight3.specular = new BABYLON.Color3(0.01,0.01,0);
+            pointlight3.intensity = 100;
+            pointlight3.radius = 100;
+
+            var pointlight4 = new BABYLON.PointLight("pointLight3", new BABYLON.Vector3(40,-10,-40), scene);
+            pointlight4.specular = new BABYLON.Color3(0,0.05,1);
+            pointlight4.intensity = 100;
+            pointlight4.radius = 100;
+            
+           
+
+            // Skybox
+            var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:5000.0}, scene);
+            var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("textures/night_star", scene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+            skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+            skybox.material = skyboxMaterial;	
+
+
+            //water
+            var waterMesh = BABYLON.Mesh.CreateGround("waterMesh", 512, 512, 32, scene, false);
+            var water = new BABYLON.WaterMaterial("water", scene, new BABYLON.Vector2(512, 512));
+            water.backFaceCulling = true;
+            water.bumpTexture = new BABYLON.Texture("textures/waterbump.png", scene);
+            water.windForce = -10;
+            water.waveHeight = 0.6;
+            water.bumpHeight = 0.1;
+            water.windDirection = new BABYLON.Vector2(1, 1);
+            water.waterColor = new BABYLON.Color3(0, 0, 221 / 255);
+            water.colorBlendFactor = 0.0;
+            water.addToRenderList(skybox);//水面にskyboxを反射させる
+            water.addToRenderList(sphere1);//水面に光の球を反射させる 表現が好みの範囲なので、今回は試験的にSphere1(赤色)のみ適用
+            waterMesh.material = water;
+
+            //水面の中にある球を可視化する。(これがないと、水面の下にある球が見えなくなる)
+            gl.addExcludedMesh(waterMesh);
+            
+            //post processエフェクトをつける。exposureで光を強調
+            var postProcess = new BABYLON.ImageProcessingPostProcess("processing", 1.0, camera);
+            postProcess.exposure = 2;
+        
+            return scene;
+        };
+        
+        var engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+        var scene = createScene();
+
+        engine.runRenderLoop(function () {
+            if (scene) {
+                scene.render();
+            }
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
